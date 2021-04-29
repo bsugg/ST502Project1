@@ -34,10 +34,10 @@ Anyone can follow the below steps to recreate the GIF files contained within thi
 
 1. Download the `project1gifGuide.RMD` and `binom95CI.RData` files, and preferably store them together in the same directory.  
 
-2. Open the `.RMD` file in R and install any packages in the `setup` code chunk, if not installed already.  
+2. Open the `.RMD` file in R and install any packages in the `setup` code chunk that are not installed already.  
 
 3. Navigate to the *Data Load* section of the `.RMD` file, and ensure the path of the current working directory is set to the location of the downloaded `.RData` file.  
 
-4. Knit the `.RMD` file, and then find the four generated GIFs in the current working directory.  
+4. Knit the `.RMD` file and subsequently find the four generated GIFs in the current working directory.  
 
 Enjoy!  
