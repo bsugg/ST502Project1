@@ -38,6 +38,6 @@ Anyone can follow the below steps to recreate the GIF files contained within thi
 
 3. Navigate to the *Data Load* section of the `.RMD` file, and ensure the path of the current working directory is set to the location of the downloaded `.RData` file.  
 
-4. Knit the `.RMD` file and subsequently find the four generated GIFs in the current working directory.  
+4. Knit the `.RMD` file and subsequently find the four generated GIFs in the current working directory. *Note: This step should take approximately 10 minutes to run.*  
 
 Enjoy!  
