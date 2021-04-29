@@ -1,0 +1,229 @@
+---
+title: "ST502 - Project 1 - Fun with GIFs!"
+author: "Brian Sugg"
+date: "February 2021"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(formatR)
+library(dplyr)
+library(ggplot2)
+library(gganimate)
+```
+
+# Project 1 Recap  
+
+## Goal  
+
+This project involves a Monte Carlo simulation study using data generated in R to investigate the properties of estimators and confidence intervals.  
+
+The primary goal is to compare different confidence interval procedures and how successful they are in capturing *p*, the probability of success from a Binomial random sample.  
+
+## Methods Used  
+
+To conduct inference on *p*, this report has focused on six different methods for generating confidence intervals, including:  
+
+* Wald interval  
+* Adjusted Wald interval  
+* Clopper-Pearson (exact) interval  
+* Score interval  
+* Raw percentile interval using a parametric bootstrap  
+* Bootstrap t interval using a parametric bootstrap  
+
+## Simulations  
+
+Which intervals should we use in practice? We really need to understand what *good properties* of a confidence interval are, such as:  
+
+* Proportion of intervals that capture the true value (hopefully 1-$\alpha$)  
+* Average length of the interval  
+
+By focusing on these two properties we can compare the performance of these intervals for making inference from various combinations of *p* and *n* using a simulation with `rbinom()` to generate data for our comparison.  
+
+### General Procedure  
+
+1. Generate *N* = 1,500 random samples from a binomial where *n* varies from 1 to 200 and *p* varies from 0.01 to 0.99 in increments of 0.01. For example, `rbinom(1500, size = 15, prob = 0.01)` does the trick for one combination of *n* = 15 and *p* = 0.01!  
+2. Create and save 95% CIs for *p* using the six methods mentioned above. For the bootstrap methods, use *B* = 200 resamples.  
+3. Calculate the two properties discussed previously for all combinations of n and p using the simulation results.  
+
+The entire simulation procedure and resulting calculations for all combinations of *n* and *p*, where *n* = 1 to 200 and *p* varies from 0.01 to 0.99 in increments of 0.01, takes around 10 hours (19,800 possible combinations).  
+
+# GIF Animation
+
+A GIF (Graphical Interchange Format) is a small collection of images that can serve as a powerful tool for bringing data to life, especially when animating a time series or other iterative type of data set.  
+
+When paired together, the `ggplot2` and `gganimate` packages offer a simple method for transforming static plots into animated GIFs!  
+
+```{r packages}
+library(ggplot2)
+library(gganimate)
+```
+
+## Data Load
+
+The simulation results from Project 1 containing all 19,800 possible combinations of *n* and *p* have been saved in a `.RData` file. Begin the GIF creation process by saving this file locally, and then loading it into your R session using code similar to the below.  
+
+```{r loadData}
+# Set working directory and load stored data generated from the simulation
+setwd("~/ST502/Projects/Project1/gif")
+load("binom95CI.RData")
+```
+
+The `binom95CI.RData` file contains three data sets:  
+
+* `dataSet` - table of results for all 19,800 combinations of *n* and *p*  
+* `plotContain` - table of results in plot-friendly format for proportion of intervals that capture the true value of *p*  
+* `plotLength` - table of results in plot-friendly format for the average length of intervals  
+
+## Plot Creation
+
+For context, a typical static plot can be created with the `ggplot2` package. An example has been provided below using subsets of `plotContain` and `plotLength` where *n* = 15.
+
+```{r createContainPlot}
+# Create plot for Proportion Contained
+## Optional: Use data=subset(plotContain,Method=="") to plot specific methods
+lineContain <- ggplot(data=subset(plotContain,n==15),aes(x=p,y=value,color=Method))
+lineContain <- lineContain +
+  geom_line(size=1) +
+  scale_y_continuous(breaks = c(0,.2,.4,.6,.8,.95), limits = c(0,1)) +
+  facet_wrap(vars(Method),labeller = label_both) +
+  labs(x="p",y="Proportion Contained") +
+  theme_bw() +
+  ggtitle("Proportion Contained @ n: 15")
+lineContain
+```
+
+```{r createLengthPlot}
+# Create plot for Average Interval Length
+## Optional: Use data=subset(plotLength,Method=="") to plot specific methods
+lineLength <- ggplot(data=subset(plotLength,n==15),aes(x=p,y=value,color=Method))
+lineLength <- lineLength +
+  geom_line(size=1) +
+  scale_y_continuous(breaks = c(0,.2,.4,.6,.8,1), limits = c(0,1)) +
+  labs(x="p",y="Average Interval Length") +
+  theme_bw() +
+  ggtitle("Average Interval Length @ n: 15")
+lineLength
+```
+
+What if we wanted to study the results of the other possible values of *n* without having to manually create multiple charts? Essentially, how can we illustrate the impact from an increase in sample size, *n*?
+
+**By generating a GIF with the help of `gganimate`!**  
+
+## GIF Creation
+
+By introducing a few additional lines of code when defining the attributes of our `ggplot` object, we can utilize the power of the `gganimate` package to render images into a GIF animation for all desired values of *n*.  
+
+The `animate()` function is used for customizing various properties of the generated GIF.  
+
+Additionally, any created GIF can be saved locally for future sharing over email, discussion boards, etc with the `anim_save()` function.  
+
+### For *n* = 1 to 50
+
+Rendering a GIF can sometimes take several minutes depending on the number of needed frames and individual plots that have to be created. For an example of a shorter GIF that can still convey key trends as *n* increases, try a subset of the plot data where *n* goes from 1 to 50.
+
+```{r createContainGIF50}
+# Create GIF for Proportion Contained
+lineContain50 <- ggplot(data=subset(plotContain,n<=50),aes(x=p,y=value,color=Method))
+lineContain50 <- lineContain50 +
+  geom_line(size=1) +
+  scale_y_continuous(breaks = c(0,.2,.4,.6,.8,.95), limits = c(0,1)) +
+  facet_wrap(vars(Method),labeller = label_both) +
+  labs(x="p",y="Proportion Contained") +
+  theme_bw() +
+  # gganimate code below
+  ggtitle("Proportion Contained @ n: {frame_time}") +
+  transition_time(n) + # Generates frame_time var used in ggtitle()
+  ease_aes("linear") +
+  enter_fade() + # Optional
+  exit_fade() # Optional
+
+# Animate the ggplot object
+animate(lineContain50,width=960,height=540)
+
+# Set filename and save most recent animation to current working directory
+anim_save("Contain_nTo50.gif")
+```
+
+```{r createLengthGIF50}
+# Create GIF for Average Interval Length
+lineLength50 <- ggplot(data=subset(plotLength,n<=50),aes(x=p,y=value,color=Method))
+lineLength50 <- lineLength50 +
+  geom_line(size=1) +
+  scale_y_continuous(breaks = c(0,.2,.4,.6,.8,1), limits = c(0,1)) +
+  labs(x="p",y="Average Interval Length") +
+  theme_bw() +
+  # gganimate code below
+  ggtitle("Average Interval Length @ n: {frame_time}") +
+  transition_time(n) + # Generates frame_time var used in ggtitle()
+  ease_aes("linear") +
+  enter_fade() + # Optional
+  exit_fade() # Optional
+
+# Animate the ggplot object
+animate(lineLength50,width=960,height=540)
+
+# Set filename and save most recent animation to current working directory
+anim_save("Length_nTo50.gif")
+```
+
+### For *n* = 1 to 200
+
+For further analysis, the entire simulation can be illustrated as *n* goes from 1 to 200.  
+
+**Important Notes:**  
+
+* The `subset()` function has been removed from the `ggplot(data=)` declaration, and all values of *n* are rendered.  
+* A new option, `nframes=` has been declared in the `animate()` function to force the creation of 200 frames within the animation, one for each value of *n*. Without this option, `gganimate` could create an animation that skips every other value of *n*, resulting in a less-desirable, choppy animation.  
+
+```{r createContainGIF200}
+# Create GIF for Proportion Contained
+lineContain200 <- ggplot(data=plotContain,aes(x=p,y=value,color=Method))
+lineContain200 <- lineContain200 +
+  geom_line(size=1) +
+  scale_y_continuous(breaks = c(0,.2,.4,.6,.8,.95), limits = c(0,1)) +
+  facet_wrap(vars(Method),labeller = label_both) +
+  labs(x="p",y="Proportion Contained") +
+  theme_bw() +
+  # gganimate code below
+  ggtitle("Proportion Contained @ n: {frame_time}") +
+  transition_time(n) + # Generates frame_time var used in ggtitle()
+  ease_aes("linear") +
+  enter_fade() + # Optional
+  exit_fade() # Optional
+
+# Animate the ggplot object
+animate(lineContain200,width=960,height=540,nframes=200)
+
+# Set filename and save most recent animation to current working directory
+anim_save("Contain_nTo200.gif")
+```
+
+```{r createLengthGIF200}
+# Create GIF for Average Interval Length
+lineLength200 <- ggplot(data=plotLength,aes(x=p,y=value,color=Method))
+lineLength200 <- lineLength200 +
+  geom_line(size=1) +
+  scale_y_continuous(breaks = c(0,.2,.4,.6,.8,1), limits = c(0,1)) +
+  labs(x="p",y="Average Interval Length") +
+  theme_bw() +
+  # gganimate code below
+  ggtitle("Average Interval Length @ n: {frame_time}") +
+  transition_time(n) + # Generates frame_time var used in ggtitle()
+  ease_aes("linear") +
+  enter_fade() + # Optional
+  exit_fade() # Optional
+
+# Animate the ggplot object
+animate(lineLength200,width=960,height=540,nframes=200)
+
+# Set filename and save most recent animation to current working directory
+anim_save("Length_nTo200.gif")
+```
+
+What trends and observations are more apparent from the animations compared to the static plot images? Enjoy!  
